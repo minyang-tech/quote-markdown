@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>MarkQuote</title>
+
+<link rel="stylesheet" href="style.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/github-markdown-css/github-markdown.min.css">
+<script src="https://unpkg.com/lucide@latest"></script>
+</head>
+
+<body>
+
+<div class="topbar">
+  <div class="title">MarkQuote</div>
+  <button class="icon-btn" onclick="toggleDark()">
+    <i data-lucide="moon"></i>
+  </button>
+</div>
+
+<div class="app">
+
+  <div class="sidebar">
+    <button class="tab-btn active" onclick="switchTab(event,'md')">
+      <i data-lucide="file-text"></i> Markdown
+    </button>
+    <button class="tab-btn" onclick="switchTab(event,'quote')">
+      <i data-lucide="image"></i> Quote
+    </button>
+  </div>
+
+  <div class="content">
+
+    <!-- Markdown -->
+    <div id="md" class="tab active">
+
+      <textarea id="input" placeholder="Markdown 입력"></textarea>
+
+      <div class="html-box">
+        <button class="copy-btn" onclick="copyHTML()">HTML 복사</button>
+        <pre id="html-output"></pre>
+      </div>
+
+      <div id="preview" class="markdown-body"></div>
+
+    </div>
+
+    <!-- Quote -->
+    <div id="quote" class="tab">
+
+      <div class="quote-controls">
+        <input type="file" id="imageInput" accept="image/*">
+        <input id="quote-text" placeholder="문구 입력">
+        <input id="quote-author" placeholder="작성자">
+        <input type="range" id="fontSize" min="16" max="60" value="28">
+
+        <div class="btn-group">
+          <button onclick="generateQuote()">생성</button>
+          <button onclick="downloadImage()">저장</button>
+        </div>
+      </div>
+
+      <div class="quote-preview" id="quoteBox">
+        <div class="overlay"></div>
+
+        <div class="quote-text-area">
+          <div id="preview-text"></div>
+          <div id="preview-author"></div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+<script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+
+<script>
+lucide.createIcons();
+
+function switchTab(e, tabId){
+  document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(b=>b.classList.remove("active"));
+  document.getElementById(tabId).classList.add("active");
+  e.target.closest("button").classList.add("active");
+}
+
+function toggleDark(){
+  document.body.classList.toggle("dark");
+}
+
+marked.setOptions({breaks:true});
+
+const input=document.getElementById("input");
+const preview=document.getElementById("preview");
+const htmlOutput=document.getElementById("html-output");
+
+input.addEventListener("input",()=>{
+  const html=marked.parse(input.value);
+  preview.innerHTML=html;
+  htmlOutput.textContent=html;
+});
+
+/* 복사 */
+function copyHTML(){
+  const text = htmlOutput.textContent;
+
+  if(navigator.clipboard){
+    navigator.clipboard.writeText(text);
+  } else {
+    const temp=document.createElement("textarea");
+    temp.value=text;
+    document.body.appendChild(temp);
+    temp.select();
+    document.execCommand("copy");
+    document.body.removeChild(temp);
+  }
+}
+
+/* 이미지 배경 */
+const imageInput=document.getElementById("imageInput");
+const quoteBox=document.getElementById("quoteBox");
+
+imageInput.addEventListener("change",(e)=>{
+  const file=e.target.files[0];
+  const reader=new FileReader();
+
+  reader.onload=(ev)=>{
+    quoteBox.style.backgroundImage=`url(${ev.target.result})`;
+  };
+
+  if(file) reader.readAsDataURL(file);
+});
+
+/* Quote */
+function generateQuote(){
+  const text=document.getElementById("quote-text").value;
+  const author=document.getElementById("quote-author").value;
+
+  document.getElementById("preview-text").innerText=text;
+  document.getElementById("preview-author").innerText=author ? "- "+author : "";
+}
+
+/* 다운로드 */
+function downloadImage(){
+  html2canvas(document.querySelector(".quote-preview")).then(canvas=>{
+    const link=document.createElement("a");
+    link.download="quote.png";
+    link.href=canvas.toDataURL();
+    link.click();
+  });
+}
+
+/* 글자 크기 */
+const fontSlider=document.getElementById("fontSize");
+fontSlider.addEventListener("input",()=>{
+  document.getElementById("preview-text").style.fontSize=fontSlider.value+"px";
+});
+</script>
+
+</body>
+</html>
